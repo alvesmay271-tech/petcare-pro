@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PetCare Pro: agendamento de banho e tosa, catálogo pet, carteira de vacinação e atendimento.">
+    <meta name="theme-color" content="#f97316">
+    <title>PetCare Pro - Petshop, Banho & Tosa</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                        },
+                        teal: {
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-brand-500 selection:text-white pb-20 md:pb-0">
+
+    <!-- Toast Notification Container (Substitui alert()) -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center gap-2.5 cursor-pointer" onclick="switchTab('agendamento')">
+                <div class="bg-brand-500 text-white p-2 rounded-xl shadow-sm">
+                    <i data-lucide="paw-print" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <span id="store-brand-name" class="font-extrabold text-xl tracking-tight text-slate-900">PetCare<span class="text-brand-500">Pro</span></span>
+                    <span class="hidden sm:inline-block text-xs bg-teal-50 text-teal-700 font-semibold px-2 py-0.5 rounded-full ml-2 border border-teal-200">App Oficial</span>
+                </div>
+            </div>
+
+            <!-- Desktop Navigation -->
+            <nav class="hidden md:flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+                <button onclick="switchTab('agendamento')" id="nav-agendamento" class="nav-btn active flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-brand-600 shadow-sm">
+                    <i data-lucide="calendar-heart" class="w-4 h-4"></i>
+                    Banho & Tosa
+                </button>
+                <button onclick="switchTab('catalogo')" id="nav-catalogo" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900 transition-all">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                    Catálogo
+                </button>
+                <button onclick="switchTab('meuspets')" id="nav-meuspets" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900 transition-all">
+                    <i data-lucide="heart-pulse" class="w-4 h-4"></i>
+                    Meus Pets & IA
+                </button>
+                <button onclick="switchTab('avisos')" id="nav-avisos" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900 transition-all relative">
+                    <i data-lucide="bell-ring" class="w-4 h-4"></i>
+                    Avisos Automáticos
+                    <span id="badge-avisos-desktop" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">3</span>
+                </button>
+            </nav>
+
+            <!-- Cart Button -->
+            <div class="flex items-center gap-3">
+                <div id="cloud-sync-badge" class="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold" title="Dados sincronizados na nuvem">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Nuvem Ativa
+                </div>
+                <div onclick="openLoyaltyModal()" class="cursor-pointer hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-extrabold hover:bg-amber-100 transition-all" title="Ver minhas Patas de Fidelidade">
+                    <i data-lucide="award" class="w-4 h-4 text-amber-500"></i>
+                    <span id="header-points">350</span> Patas
+                </div>
+                <button onclick="toggleRoleMode()" id="role-toggle-btn" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-all">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-teal-600"></i>
+                    <span id="role-toggle-text">Modo Loja</span>
+                </button>
+                <button onclick="toggleCart()" class="relative p-2.5 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 bg-white">
+                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                    <span id="cart-count" class="absolute -top-1.5 -right-1.5 bg-brand-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+        <!-- ========================================== -->
+        <!-- ABA 1: AGENDAMENTO DE BANHO & TOSA         -->
+        <!-- ========================================== -->
+        <section id="tab-agendamento" class="tab-content block space-y-6">
+            <!-- Hero Banner -->
+            <div class="bg-gradient-to-r from-brand-500 to-amber-500 rounded-2xl p-6 sm:p-8 text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="space-y-2 max-w-xl">
+                    <span class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Estética & Bem-Estar Animal
+                    </span>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Agende o Banho & Tosa do seu melhor amigo</h1>
+                    <p class="text-brand-50 text-sm sm:text-base">Escolha o serviço ideal, horário e receba notificações automáticas em cada etapa do cuidado (Banho, Secagem e Pronto!).</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl text-center min-w-[160px]">
+                    <p class="text-xs uppercase tracking-wider text-brand-100 font-semibold">Próximo Horário Livre</p>
+                    <p class="text-2xl font-extrabold mt-1">Hoje, 14:30</p>
+                    <span class="inline-block mt-1 text-xs bg-emerald-500 text-white px-2 py-0.5 rounded-full font-medium">Disponível</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Formulário de Agendamento -->
+                <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2 mb-5">
+                        <i data-lucide="calendar-plus" class="w-5 h-5 text-brand-500"></i>
+                        Novo Agendamento
+                    </h2>
+
+                    <form id="booking-form" onsubmit="handleBooking(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Nome do Pet *</label>
+                                <input type="text" id="pet-name" required placeholder="Ex: Thor, Mel, Luna..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Espécie e Porte *</label>
+                                <select id="pet-size" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm bg-white transition-all">
+                                    <option value="Cão Pequeno">Cão - Porte Pequeno (até 10kg)</option>
+                                    <option value="Cão Médio">Cão - Porte Médio (10kg a 25kg)</option>
+                                    <option value="Cão Grande">Cão - Porte Grande (+25kg)</option>
+                                    <option value="Gato">Gato (Todos os portes)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Selecione o Serviço *</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="service" value="Banho Completo|55" checked class="peer sr-only">
+                                    <div class="p-3.5 rounded-xl border-2 border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50/50 transition-all hover:border-slate-300">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <i data-lucide="droplets" class="w-4 h-4 text-brand-500"></i>
+                                            <span class="font-bold text-slate-900 text-sm">R$ 55</span>
+                                        </div>
+                                        <p class="font-semibold text-sm text-slate-800">Banho Completo</p>
+                                        <p class="text-xs text-slate-500 mt-0.5">Unhas + Ouvidos</p>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="service" value="Banho + Tosa Higiênica|75" class="peer sr-only">
+                                    <div class="p-3.5 rounded-xl border-2 border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50/50 transition-all hover:border-slate-300">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <i data-lucide="scissors" class="w-4 h-4 text-teal-600"></i>
+                                            <span class="font-bold text-slate-900 text-sm">R$ 75</span>
+                                        </div>
+                                        <p class="font-semibold text-sm text-slate-800">Banho + Higiênica</p>
+                                        <p class="text-xs text-slate-500 mt-0.5">Limpeza íntima e patas</p>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="service" value="Banho + Tosa Geral|110" class="peer sr-only">
+                                    <div class="p-3.5 rounded-xl border-2 border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50/50 transition-all hover:border-slate-300">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <i data-lucide="crown" class="w-4 h-4 text-amber-500"></i>
+                                            <span class="font-bold text-slate-900 text-sm">R$ 110</span>
+                                        </div>
+                                        <p class="font-semibold text-sm text-slate-800">Pacote Spa + Tosa</p>
+                                        <p class="text-xs text-slate-500 mt-0.5">Hidratação + Tosa</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Data *</label>
+                                <input type="date" id="booking-date" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Horário *</label>
+                                <select id="booking-time" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm bg-white">
+                                    <option value="09:00">09:00 - Manhã</option>
+                                    <option value="10:30">10:30 - Manhã</option>
+                                    <option value="14:30" selected>14:30 - Tarde</option>
+                                    <option value="16:00">16:00 - Tarde</option>
+                                    <option value="17:30">17:30 - Final da Tarde</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-teal-100 text-teal-700 p-2 rounded-lg">
+                                    <i data-lucide="car" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">Solicitar Táxi Dog (Busca e Entrega)</p>
+                                    <p class="text-xs text-slate-500">Taxa fixa regional (+ R$ 15,00)</p>
+                                </div>
+                            </div>
+                            <input type="checkbox" id="taxi-dog" class="w-5 h-5 accent-brand-500 rounded cursor-pointer">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Observações / Alergias</label>
+                            <input type="text" id="booking-notes" placeholder="Ex: Usar shampoo hipoalergênico, medo de secador..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm">
+                        </div>
+
+                        <button type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                            Confirmar Agendamento & Ativar Avisos
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Lista de Agendamentos & Status em Tempo Real -->
+                <div class="lg:col-span-5 space-y-4">
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="clock" class="w-5 h-5 text-teal-600"></i>
+                                Meus Agendamentos
+                            </h2>
+                            <span class="text-xs font-medium text-slate-500">Acompanhe ao vivo</span>
+                        </div>
+
+                        <div id="appointments-list" class="space-y-3">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- ABA 2: CATÁLOGO DE PRODUTOS                -->
+        <!-- ========================================== -->
+        <section id="tab-catalogo" class="tab-content hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">Pet Shop & Farmácia</h1>
+                    <p class="text-sm text-slate-500">Rações, petiscos, brinquedos e higiene com entrega rápida.</p>
+                </div>
+
+                <!-- Filtros de Categoria -->
+                <div class="flex flex-wrap gap-2" id="category-filters">
+                    <button onclick="filterProducts('todos')" class="cat-btn active px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white transition-all">Todos</button>
+                    <button onclick="filterProducts('racao')" class="cat-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">Rações</button>
+                    <button onclick="filterProducts('brinquedos')" class="cat-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">Brinquedos</button>
+                    <button onclick="filterProducts('higiene')" class="cat-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">Higiene & Saúde</button>
+                </div>
+            </div>
+
+            <!-- Barra de Busca -->
+            <div class="relative">
+                <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                <input type="text" id="search-input" onkeyup="searchProducts()" placeholder="Buscar ração premium, antipulgas, mordedor..." class="w-full pl-11 pr-4 py-3 bg-white rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 outline-none text-sm shadow-sm">
+            </div>
+
+            <!-- Grid de Produtos -->
+            <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <!-- Preenchido via JS -->
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- ABA 3: CENTRAL DE AVISOS AUTOMÁTICOS       -->
+        <!-- ========================================== -->
+        <section id="tab-avisos" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Configurações de Automação -->
+                <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-5 h-fit">
+                    <div>
+                        <span class="inline-flex items-center gap-1.5 bg-teal-50 text-teal-700 text-xs font-bold px-2.5 py-1 rounded-full mb-2">
+                            <i data-lucide="bot" class="w-3.5 h-3.5"></i> Automação Inteligente
+                        </span>
+                        <h2 class="text-xl font-extrabold text-slate-900">Regras de Avisos Automáticos</h2>
+                        <p class="text-sm text-slate-500 mt-1">Configure lembretes via WhatsApp/Push para nunca esquecer dos cuidados do seu pet.</p>
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                        <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">Status do Banho ao Vivo</p>
+                                <p class="text-xs text-slate-500">Avisa quando entrar no banho e quando estiver pronto.</p>
+                            </div>
+                            <input type="checkbox" checked onchange="toggleAutomationRule('Status do Banho')" class="w-5 h-5 accent-teal-600 cursor-pointer">
+                        </div>
+
+                        <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">Lembrete Quinzenal de Banho</p>
+                                <p class="text-xs text-slate-500">Sugere agendamento automático a cada 15 dias.</p>
+                            </div>
+                            <input type="checkbox" checked onchange="toggleAutomationRule('Lembrete de Banho')" class="w-5 h-5 accent-teal-600 cursor-pointer">
+                        </div>
+
+                        <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">Alerta de Vacinas & Vermífugo</p>
+                                <p class="text-xs text-slate-500">Notifica 7 dias antes do vencimento.</p>
+                            </div>
+                            <input type="checkbox" checked onchange="toggleAutomationRule('Vacinas e Vermífugo')" class="w-5 h-5 accent-teal-600 cursor-pointer">
+                        </div>
+
+                        <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">Reposição de Ração</p>
+                                <p class="text-xs text-slate-500">Calcula o fim do pacote e envia cupom de recompra.</p>
+                            </div>
+                            <input type="checkbox" checked onchange="toggleAutomationRule('Reposição de Ração')" class="w-5 h-5 accent-teal-600 cursor-pointer">
+                        </div>
+                    </div>
+
+                    <!-- Botão Simulador de Disparo -->
+                    <div class="pt-3 border-t border-slate-100">
+                        <button onclick="simulateAutoAlert()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
+                            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                            Simular Disparo de Aviso Automático Agora
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feed de Notificações Enviadas -->
+                <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="message-square-dot" class="w-5 h-5 text-brand-500"></i>
+                            Histórico de Avisos Disparados
+                        </h2>
+                        <button onclick="markAllRead()" class="text-xs font-semibold text-teal-600 hover:text-teal-700">Marcar todos como lidos</button>
+                    </div>
+
+                    <div id="notifications-feed" class="space-y-3">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- ABA 4: MEUS PETS, VACINAS & ASSISTENTE IA  -->
+        <!-- ========================================== -->
+        <section id="tab-meuspets" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Carteirinha Digital & Cadastro de Pets -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                            <div>
+                                <h2 class="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                                    <i data-lucide="id-card" class="w-5 h-5 text-brand-500"></i>
+                                    Carteirinha Digital dos Pets
+                                </h2>
+                                <p class="text-xs text-slate-500 mt-0.5">Cadastre seus pets para automação de vacinas e agendamentos rápidos.</p>
+                            </div>
+                            <button onclick="toggleNewPetForm()" class="bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shrink-0 self-start">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Novo Pet
+                            </button>
+                        </div>
+
+                        <!-- Formulário Rápido de Novo Pet (Oculto por padrão) -->
+                        <form id="new-pet-form" onsubmit="handleAddPet(event)" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5 space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <input type="text" id="new-pet-name" required placeholder="Nome (ex: Bob)" class="px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:border-brand-500">
+                                <input type="text" id="new-pet-breed" required placeholder="Raça (ex: Poodle)" class="px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:border-brand-500">
+                                <select id="new-pet-species" class="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white outline-none focus:border-brand-500">
+                                    <option value="Cão">Cão 🐶</option>
+                                    <option value="Gato">Gato 🐱</option>
+                                </select>
+                            </div>
+                            <div class="flex justify-end gap-2">
+                                <button type="button" onclick="toggleNewPetForm()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg">Cancelar</button>
+                                <button type="submit" class="px-4 py-1.5 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-lg">Salvar Pet</button>
+                            </div>
+                        </form>
+
+                        <!-- Lista de Carteirinhas -->
+                        <div id="pets-cards-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assistente Virtual Veterinário / Pet IA -->
+                <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[520px]">
+                    <div class="p-4 border-b border-slate-200 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-t-2xl flex items-center gap-3">
+                        <div class="bg-white/20 p-2 rounded-xl">
+                            <i data-lucide="sparkles" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm">Assistente PetCare IA</h3>
+                            <p class="text-[11px] text-teal-100">Tire dúvidas sobre cuidados, rações e bem-estar</p>
+                        </div>
+                    </div>
+
+                    <!-- Histórico do Chat -->
+                    <div id="ai-chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50">
+                        <div class="flex items-start gap-2.5">
+                            <div class="bg-teal-100 text-teal-700 p-1.5 rounded-lg shrink-0 mt-0.5">
+                                <i data-lucide="bot" class="w-4 h-4"></i>
+                            </div>
+                            <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-none p-3 text-xs text-slate-700 shadow-xs leading-relaxed">
+                                Olá! Sou o assistente inteligente do <strong>PetCare Pro</strong>. 🐾<br><br>
+                                Pode me perguntar sobre frequência de banhos, dicas de alimentação, adaptação de gatos ou cuidados pós-tosa!
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sugestões Rápidas -->
+                    <div class="px-4 py-2 border-t border-slate-100 flex gap-1.5 overflow-x-auto bg-white">
+                        <button onclick="sendQuickPrompt('Qual a frequência ideal de banho para cães?')" class="shrink-0 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-medium transition-colors">Frequência de banho?</button>
+                        <button onclick="sendQuickPrompt('Como saber se a ração está acabando?')" class="shrink-0 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-medium transition-colors">Cálculo de ração</button>
+                    </div>
+
+                    <!-- Input de Mensagem -->
+                    <form onsubmit="handleAskAI(event)" class="p-3 border-t border-slate-200 bg-white rounded-b-2xl flex gap-2">
+                        <input type="text" id="ai-prompt-input" required placeholder="Digite sua dúvida sobre seu pet..." class="flex-1 px-3.5 py-2 bg-slate-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500">
+                        <button type="submit" id="ai-send-btn" class="bg-teal-600 hover:bg-teal-700 text-white p-2 rounded-xl transition-colors flex items-center justify-center">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- ABA 5: PAINEL DO GESTOR (MODO LOJA)        -->
+        <!-- ========================================== -->
+        <section id="tab-gestao" class="tab-content hidden space-y-6">
+            <!-- KPIs Financeiros e Operacionais -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Receita Agendamentos</p>
+                        <p id="kpi-revenue" class="text-2xl font-extrabold text-slate-900 mt-1">R$ 130,00</p>
+                    </div>
+                    <div class="bg-emerald-100 text-emerald-600 p-3 rounded-xl">
+                        <i data-lucide="wallet" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Pets em Atendimento</p>
+                        <p id="kpi-active-pets" class="text-2xl font-extrabold text-brand-600 mt-1">2 Pets</p>
+                    </div>
+                    <div class="bg-brand-100 text-brand-600 p-3 rounded-xl">
+                        <i data-lucide="scissors" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Avisos Disparados</p>
+                        <p id="kpi-alerts" class="text-2xl font-extrabold text-teal-600 mt-1">3 Envios</p>
+                    </div>
+                    <div class="bg-teal-100 text-teal-600 p-3 rounded-xl">
+                        <i data-lucide="send" class="w-6 h-6"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Fila de Operação Banho & Tosa -->
+                <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="clipboard-list" class="w-5 h-5 text-brand-500"></i>
+                        Controle de Fila - Banho & Tosa
+                    </h2>
+                    <div id="admin-queue-list" class="space-y-3">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+
+                <!-- Cadastrar Novo Produto no Catálogo -->
+                <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm h-fit space-y-4">
+                    <h2 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="package-plus" class="w-5 h-5 text-teal-600"></i>
+                        Cadastrar Produto na Loja
+                    </h2>
+                    <form onsubmit="handleAdminAddProduct(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome do Produto *</label>
+                            <input type="text" id="admin-prod-name" required placeholder="Ex: Coleira Peitoral Confort" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-teal-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Categoria *</label>
+                                <select id="admin-prod-cat" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white outline-none focus:border-teal-500">
+                                    <option value="racao">Rações</option>
+                                    <option value="brinquedos">Brinquedos</option>
+                                    <option value="higiene">Higiene & Saúde</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Preço (R$) *</label>
+                                <input type="number" step="0.01" id="admin-prod-price" required placeholder="49.90" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-teal-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Selo / Destaque</label>
+                            <input type="text" id="admin-prod-tag" placeholder="Ex: Lançamento" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-teal-500">
+                        </div>
+                        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            Publicar no Catálogo
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Configurações de Identidade da Loja para Publicação -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="store" class="w-5 h-5 text-brand-500"></i>
+                            Dados & Personalização da Loja (Para Publicação)
+                        </h2>
+                        <p class="text-xs text-slate-500">Personalize o nome, WhatsApp e endereço que aparecem para seus clientes.</p>
+                    </div>
+                </div>
+                <form onsubmit="handleSaveStoreSettings(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome do Petshop *</label>
+                        <input type="text" id="setting-store-name" required value="PetCare Pro" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">WhatsApp (com DDD) *</label>
+                        <input type="text" id="setting-store-phone" required value="5575999999999" placeholder="5575999999999" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Endereço / Cidade *</label>
+                        <input type="text" id="setting-store-address" required value="Centro, Santo Antônio de Jesus - BA" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-brand-500">
+                    </div>
+                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Salvar Identidade
+                    </button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Rodapé Oficial com WhatsApp Direto -->
+    <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div class="flex items-center gap-2">
+            <span id="footer-store-name" class="font-bold text-slate-800">PetCare Pro</span>
+            <span>•</span>
+            <span id="footer-store-address">Centro, Santo Antônio de Jesus - BA</span>
+        </div>
+        <a id="footer-whatsapp-link" href="https://wa.me/5575999999999?text=Ol%C3%A1!%20Vim%20pelo%20aplicativo%20do%20Petshop." target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl shadow-xs transition-all">
+            <i data-lucide="message-circle" class="w-4 h-4"></i>
+            Falar no WhatsApp da Loja
+        </a>
+    </footer>
+
+    <!-- Drawer Lateral do Carrinho de Compras -->
+    <div id="cart-drawer" class="fixed inset-0 z-50 hidden">
+        <div onclick="toggleCart()" class="absolute inset-0 bg-slate-900/50 backdrop-blur-xs"></div>
+        <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl flex flex-col z-10">
+            <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+                <h3 class="font-extrabold text-lg text-slate-900 flex items-center gap-2">
+                    <i data-lucide="shopping-bag" class="w-5 h-5 text-brand-500"></i>
+                    Meu Carrinho
+                </h3>
+                <button onclick="toggleCart()" class="p-2 text-slate-400 hover:text-slate-700 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div id="cart-items" class="flex-1 overflow-y-auto p-5 space-y-3"></div>
+            <div class="p-5 border-t border-slate-200 bg-slate-50 space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-semibold text-slate-600">Total do Pedido</span>
+                    <span id="cart-total" class="text-xl font-extrabold text-slate-900">R$ 0,00</span>
+                </div>
+                <button onclick="checkoutCart()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    Finalizar Pedido (+100 Patas)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Clube de Fidelidade -->
+    <div id="loyalty-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div onclick="closeLoyaltyModal()" class="absolute inset-0 bg-slate-900/50 backdrop-blur-xs"></div>
+        <div class="relative bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 z-10">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="bg-amber-100 text-amber-600 p-2 rounded-xl">
+                        <i data-lucide="award" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-lg text-slate-900">PatasClub Fidelidade</h3>
+                        <p class="text-xs text-slate-500">Acumule Patas em banhos e compras</p>
+                    </div>
+                </div>
+                <button onclick="closeLoyaltyModal()" class="p-2 text-slate-400 hover:text-slate-700 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="bg-gradient-to-r from-amber-500 to-brand-500 rounded-xl p-4 text-white">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <p class="text-xs uppercase font-semibold text-amber-100">Seu Saldo Atual</p>
+                        <p class="text-3xl font-extrabold mt-0.5"><span id="modal-points">350</span> Patas</p>
+                    </div>
+                    <span class="text-xs bg-white/20 px-2.5 py-1 rounded-full font-bold">Meta: 500 Patas</span>
+                </div>
+                <div class="w-full bg-black/20 h-2.5 rounded-full mt-3 overflow-hidden">
+                    <div id="loyalty-progress-bar" class="bg-white h-full rounded-full transition-all duration-500" style="width: 70%"></div>
+                </div>
+                <p id="loyalty-status-text" class="text-[11px] mt-2 text-amber-50">Faltam 150 Patas para resgatar 1 Banho Grátis!</p>
+            </div>
+
+            <div class="space-y-2.5">
+                <p class="text-xs font-bold text-slate-500 uppercase">Recompensas Disponíveis</p>
+                <div class="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
+                    <div>
+                        <p class="text-sm font-bold text-slate-800">Petisco Natural Grátis</p>
+                        <p class="text-xs text-slate-500">Custo: 200 Patas</p>
+                    </div>
+                    <button onclick="redeemReward(200, 'Petisco Natural Grátis')" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg transition-colors">
+                        Resgatar
+                    </button>
+                </div>
+                <div class="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
+                    <div>
+                        <p class="text-sm font-bold text-slate-800">1 Banho Completo Grátis</p>
+                        <p class="text-xs text-slate-500">Custo: 500 Patas</p>
+                    </div>
+                    <button onclick="redeemReward(500, '1 Banho Completo Grátis')" class="px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-lg transition-colors">
+                        Resgatar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Mobile -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around items-center z-40 shadow-lg">
+        <button onclick="switchTab('agendamento')" id="mob-agendamento" class="mob-nav-btn flex flex-col items-center gap-1 p-1.5 text-brand-600 font-bold text-xs">
+            <i data-lucide="calendar-heart" class="w-5 h-5"></i>
+            <span>Banho/Tosa</span>
+        </button>
+        <button onclick="switchTab('catalogo')" id="mob-catalogo" class="mob-nav-btn flex flex-col items-center gap-1 p-1.5 text-slate-500 font-medium text-xs">
+            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+            <span>Catálogo</span>
+        </button>
+        <button onclick="switchTab('meuspets')" id="mob-meuspets" class="mob-nav-btn flex flex-col items-center gap-1 p-1.5 text-slate-500 font-medium text-xs">
+            <i data-lucide="heart-pulse" class="w-5 h-5"></i>
+            <span>Pets & IA</span>
+        </button>
+        <button onclick="switchTab('avisos')" id="mob-avisos" class="mob-nav-btn flex flex-col items-center gap-1 p-1.5 text-slate-500 font-medium text-xs relative">
+            <i data-lucide="bell-ring" class="w-5 h-5"></i>
+            <span>Avisos</span>
+            <span id="badge-avisos-mobile" class="absolute top-1 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full">3</span>
+        </button>
+    </nav>
+
+    <!-- Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- DADOS INICIAIS (FALLBACK / PADRÃO) ---
+        let myPets = [
+            {
+                id: 1,
+                name: "Thor",
+                species: "Cão",
+                breed: "Golden Retriever",
+                weight: "28 kg",
+                vaccineStatus: "Em dia (V10 + Antirrábica)",
+                nextDewormer: "Em 18 dias"
+            },
+            {
+                id: 2,
+                name: "Luna",
+                species: "Gato",
+                breed: "Siamês",
+                weight: "4,2 kg",
+                vaccineStatus: "Vence em 7 dias (V4)",
+                nextDewormer: "Em dia"
+            }
+        ];
+
+        let productsData = [
+            {
+                id: 1,
+                name: "Ração Super Premium Cães Adultos 15kg",
+                category: "racao",
+                price: 189.90,
+                tag: "Mais Vendido",
+                image: "https://placehold.co/400x300/fff7ed/ea580c?text=Racao+Premium+15kg"
+            },
+            {
+                id: 2,
+                name: "Ração Gatos Castrados Salmão 3kg",
+                category: "racao",
+                price: 84.50,
+                tag: "Controle Urinário",
+                image: "https://placehold.co/400x300/f0fdfa/0d9488?text=Racao+Gatos+Salmao"
+            },
+            {
+                id: 3,
+                name: "Mordedor Interativo Corda & Borracha",
+                category: "brinquedos",
+                price: 34.90,
+                tag: "Anti-Stress",
+                image: "https://placehold.co/400x300/eff6ff/2563eb?text=Mordedor+Interativo"
+            },
+            {
+                id: 4,
+                name: "Antipulgas e Carrapatos Mastigável",
+                category: "higiene",
+                price: 92.00,
+                tag: "Proteção 35 dias",
+                image: "https://placehold.co/400x300/fef2f2/dc2626?text=Antipulgas+35d"
+            },
+            {
+                id: 5,
+                name: "Shampoo Neutro Hipoalergênico 500ml",
+                category: "higiene",
+                price: 42.00,
+                tag: "Pele Sensível",
+                image: "https://placehold.co/400x300/f0fdf4/16a34a?text=Shampoo+Neutro"
+            },
+            {
+                id: 6,
+                name: "Arranhador Torre com Bolinha para Gatos",
+                category: "brinquedos",
+                price: 119.90,
+                tag: "Diversão",
+                image: "https://placehold.co/400x300/faf5ff/9333ea?text=Arranhador+Gatos"
+            },
+            {
+                id: 7,
+                name: "Petisco Natural Ossinho de Frango 250g",
+                category: "racao",
+                price: 22.90,
+                tag: "100% Natural",
+                image: "https://placehold.co/400x300/fffbeb/d97706?text=Petisco+Natural"
+            },
+            {
+                id: 8,
+                name: "Tapete Higiênico Super Absorvente (30 un)",
+                category: "higiene",
+                price: 68.00,
+                tag: "Econômico",
+                image: "https://placehold.co/400x300/f8fafc/475569?text=Tapete+Higienico"
+            }
+        ];
+
+        let appointments = [
+            {
+                id: 101,
+                petName: "Thor",
+                petSize: "Cão Médio",
+                service: "Banho + Tosa Higiênica",
+                price: 75,
+                date: "Hoje",
+                time: "10:30",
+                taxi: false,
+                status: "No Banho 🫧",
+                statusStep: 2
+            },
+            {
+                id: 102,
+                petName: "Luna",
+                petSize: "Gato",
+                service: "Banho Completo",
+                price: 55,
+                date: "Amanhã",
+                time: "09:00",
+                taxi: true,
+                status: "Agendado 📅",
+                statusStep: 1
+            }
+        ];
+
+        let notifications = [
+            {
+                id: 1,
+                type: "banho",
+                title: "Thor está no banho! 🫧",
+                message: "Olá! O Thor acabou de entrar para o banho com água morninha e shampoo neutro.",
+                time: "Agora mesmo",
+                unread: true
+            },
+            {
+                id: 2,
+                type: "racao",
+                title: "Hora de repor a Ração do Thor? 🦴",
+                message: "Faz 28 dias desde sua última compra de Ração Super Premium 15kg. Garanta 10% OFF hoje!",
+                time: "Há 2 horas",
+                unread: true
+            },
+            {
+                id: 3,
+                type: "vacina",
+                title: "Lembrete Automático: Vacina V10 💉",
+                message: "O reforço anual da vacina da Luna vence em 7 dias. Agende uma consulta veterinária.",
+                time: "Ontem",
+                unread: true
+            }
+        ];
+
+        let cart = [];
+        let currentCategory = 'todos';
+        let isAdminMode = false;
+        let loyaltyPoints = 350;
+        let storeSettings = {
+            name: "PetCare Pro",
+            phone: "5575999999999",
+            address: "Centro, Santo Antônio de Jesus - BA"
+        };
+
+        // --- PERSISTÊNCIA LOCAL (FUNCIONA EM HOSPEDAGEM ESTÁTICA) ---
+        const LOCAL_STORAGE_KEY = 'petcare-pro-state-v1';
+
+        function loadLocalState() {
+            try {
+                const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (!saved) return;
+                const data = JSON.parse(saved);
+                if (data.myPets) myPets = data.myPets;
+                if (data.productsData) productsData = data.productsData;
+                if (data.appointments) appointments = data.appointments;
+                if (data.notifications) notifications = data.notifications;
+                if (typeof data.loyaltyPoints === 'number') loyaltyPoints = data.loyaltyPoints;
+                if (data.storeSettings) storeSettings = data.storeSettings;
+            } catch (error) {
+                console.warn('Não foi possível carregar os dados locais:', error);
+            }
+        }
+
+        function saveLocalState() {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
+                    myPets, productsData, appointments, notifications,
+                    loyaltyPoints, storeSettings
+                }));
+            } catch (error) {
+                console.warn('Não foi possível salvar os dados locais:', error);
+            }
+        }
+
+        // --- PERSISTÊNCIA NA NUVEM ---
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        async function initCloudStorage() {
+            try {
+                if (typeof __firebase_config === 'undefined') return;
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    const cred = await signInWithCustomToken(auth, __initial_auth_token);
+                    currentUser = cred.user;
+                } else {
+                    const cred = await signInAnonymously(auth);
+                    currentUser = cred.user;
+                }
+
+                if (!currentUser) return;
+
+                const stateDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'petshop_data', 'main_state');
+                onSnapshot(stateDocRef, (snap) => {
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        if (data.myPets) myPets = data.myPets;
+                        if (data.productsData) productsData = data.productsData;
+                        if (data.appointments) appointments = data.appointments;
+                        if (data.notifications) notifications = data.notifications;
+                        if (typeof data.loyaltyPoints === 'number') loyaltyPoints = data.loyaltyPoints;
+                        if (data.storeSettings) storeSettings = data.storeSettings;
+
+                        renderAppointments();
+                        renderProducts();
+                        renderNotifications();
+                        renderPets();
+                        renderAdminPanel();
+                        updateLoyaltyUI();
+                        applyStoreSettingsUI();
+                    } else {
+                        saveCloudState();
+                    }
+                }, (err) => {
+                    console.error("Erro na sincronização:", err);
+                });
+            } catch (e) {
+                console.error("Falha ao iniciar nuvem:", e);
+            }
+        }
+
+        async function saveCloudState() {
+            saveLocalState();
+            if (!db || !currentUser) return;
+            try {
+                const stateDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'petshop_data', 'main_state');
+                await setDoc(stateDocRef, {
+                    myPets,
+                    productsData,
+                    appointments,
+                    notifications,
+                    loyaltyPoints,
+                    storeSettings,
+                    updatedAt: Date.now()
+                }, { merge: true });
+            } catch (e) {
+                console.error("Erro ao salvar dados na nuvem:", e);
+            }
+        }
+
+        // --- EXPOR FUNÇÕES PARA EVENTOS INLINE HTML ---
+        Object.assign(window, {
+            switchTab,
+            handleBooking,
+            advanceStatus,
+            filterProducts,
+            searchProducts,
+            toggleCart,
+            addToCart,
+            changeQty,
+            checkoutCart,
+            openLoyaltyModal,
+            closeLoyaltyModal,
+            redeemReward,
+            toggleAutomationRule,
+            simulateAutoAlert,
+            markAllRead,
+            toggleNewPetForm,
+            handleAddPet,
+            quickBookPet,
+            sendQuickPrompt,
+            handleAskAI,
+            toggleRoleMode,
+            handleAdminAddProduct,
+            handleSaveStoreSettings
+        });
+
+        // --- INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLocalState();
+            // Define data mínima como hoje no input de data
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('booking-date');
+            if(dateInput) {
+                dateInput.value = today;
+                dateInput.min = today;
+            }
+
+            renderAppointments();
+            renderProducts();
+            renderNotifications();
+            renderPets();
+            renderAdminPanel();
+            updateLoyaltyUI();
+            applyStoreSettingsUI();
+            updateCartUI();
+            lucide.createIcons();
+            initCloudStorage();
+        });
+
+        // --- NAVEGAÇÃO ENTRE ABAS ---
+        function switchTab(tabName) {
+            // Esconde todas as seções
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('block');
+            });
+
+            // Mostra a seção selecionada
+            const selectedTab = document.getElementById(`tab-${tabName}`);
+            if (selectedTab) {
+                selectedTab.classList.remove('hidden');
+                selectedTab.classList.add('block');
+            }
+
+            // Atualiza botões Desktop
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-brand-600', 'shadow-sm');
+                btn.classList.add('text-slate-600');
+            });
+            const activeDesktop = document.getElementById(`nav-${tabName}`);
+            if (activeDesktop) {
+                activeDesktop.classList.add('bg-white', 'text-brand-600', 'shadow-sm');
+                activeDesktop.classList.remove('text-slate-600');
+            }
+
+            // Atualiza botões Mobile
+            document.querySelectorAll('.mob-nav-btn').forEach(btn => {
+                btn.classList.remove('text-brand-600', 'font-bold');
+                btn.classList.add('text-slate-500', 'font-medium');
+            });
+            const activeMob = document.getElementById(`mob-${tabName}`);
+            if (activeMob) {
+                activeMob.classList.add('text-brand-600', 'font-bold');
+                activeMob.classList.remove('text-slate-500', 'font-medium');
+            }
+        }
+
+        // --- SISTEMA DE TOAST (MENSAGENS) ---
+        function showToast(title, message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = type === 'success' 
+                ? 'bg-slate-900 text-white border-l-4 border-teal-500' 
+                : 'bg-slate-900 text-white border-l-4 border-brand-500';
+
+            toast.className = `${colors} p-4 rounded-xl shadow-xl pointer-events-auto transform transition-all duration-300 translate-y-0 opacity-100 flex items-start gap-3`;
+            toast.innerHTML = `
+                <div class="mt-0.5 text-teal-400">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-bold text-sm">${title}</p>
+                    <p class="text-xs text-slate-300 mt-0.5">${message}</p>
+                </div>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // --- LÓGICA DE AGENDAMENTO ---
+        function handleBooking(e) {
+            e.preventDefault();
+            
+            const petName = document.getElementById('pet-name').value.trim();
+            const petSize = document.getElementById('pet-size').value;
+            const serviceRaw = document.querySelector('input[name="service"]:checked').value.split('|');
+            const serviceName = serviceRaw[0];
+            let price = parseFloat(serviceRaw[1]);
+            const dateVal = document.getElementById('booking-date').value;
+            const timeVal = document.getElementById('booking-time').value;
+            const taxi = document.getElementById('taxi-dog').checked;
+
+            if (taxi) price += 15;
+
+            // Formatar data
+            const dateObj = new Date(dateVal + 'T00:00:00');
+            const formattedDate = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+            const newBooking = {
+                id: Date.now(),
+                petName,
+                petSize,
+                service: serviceName,
+                price,
+                date: formattedDate,
+                time: timeVal,
+                taxi,
+                status: "Agendado 📅",
+                statusStep: 1
+            };
+
+            appointments.unshift(newBooking);
+            renderAppointments();
+            renderAdminPanel();
+            addLoyaltyPoints(50);
+            saveCloudState();
+
+            // Dispara aviso automático de confirmação
+            addNotification(
+                "banho",
+                `Agendamento Confirmado: ${petName} 🐾`,
+                `Horário reservado para ${formattedDate} às ${timeVal} (${serviceName}). Você ganhou +50 Patas!`
+            );
+
+            showToast("Agendamento Confirmado!", `+50 Patas adicionadas ao seu clube de fidelidade.`);
+            document.getElementById('booking-form').reset();
+            document.getElementById('booking-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        function advanceStatus(id) {
+            const app = appointments.find(a => a.id === id);
+            if (!app) return;
+
+            if (app.statusStep === 1) {
+                app.statusStep = 2;
+                app.status = "No Banho 🫧";
+                addNotification("banho", `${app.petName} entrou no banho! 🫧`, `Estamos cuidando do(a) ${app.petName} com todo carinho.`);
+                showToast("Status Atualizado", `Aviso automático enviado: ${app.petName} está no banho!`);
+            } else if (app.statusStep === 2) {
+                app.statusStep = 3;
+                app.status = "Pronto p/ Buscar ✨";
+                addNotification("banho", `${app.petName} está pronto e cheiroso! ✨`, `O serviço de ${app.service} foi concluído. ${app.taxi ? 'Nosso Táxi Dog já está saindo para entrega!' : 'Já pode vir buscar!'}`);
+                showToast("Pet Pronto!", `Aviso automático enviado ao tutor de ${app.petName}!`);
+            }
+            renderAppointments();
+            renderAdminPanel();
+            saveCloudState();
+        }
+
+        function renderAppointments() {
+            const list = document.getElementById('appointments-list');
+            if (appointments.length === 0) {
+                list.innerHTML = `<p class="text-sm text-slate-400 text-center py-6">Nenhum agendamento ativo.</p>`;
+                return;
+            }
+
+            list.innerHTML = appointments.map(app => {
+                let badgeColor = "bg-blue-50 text-blue-700 border-blue-200";
+                if (app.statusStep === 2) badgeColor = "bg-amber-50 text-amber-700 border-amber-200";
+                if (app.statusStep === 3) badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+
+                return `
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-900 text-base">${app.petName}</span>
+                                <span class="text-xs text-slate-500">(${app.petSize})</span>
+                            </div>
+                            <p class="text-xs font-medium text-slate-600 mt-0.5">${app.service} ${app.taxi ? '• 🚗 Táxi Dog' : ''}</p>
+                        </div>
+                        <span class="text-xs font-bold px-2.5 py-1 rounded-full border ${badgeColor}">
+                            ${app.status}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/70 text-xs">
+                        <span class="text-slate-600 font-semibold flex items-center gap-1">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-brand-500"></i> ${app.date} às ${app.time}
+                        </span>
+                        <span class="font-extrabold text-slate-900">R$ ${app.price.toFixed(2).replace('.', ',')}</span>
+                    </div>
+
+                    ${app.statusStep < 3 ? `
+                    <button onclick="advanceStatus(${app.id})" class="w-full py-1.5 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5">
+                        <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-teal-600"></i>
+                        Avançar Etapa & Disparar Aviso
+                    </button>
+                    ` : ''}
+                </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // --- LÓGICA DO CATÁLOGO DE PRODUTOS ---
+        function filterProducts(category) {
+            currentCategory = category;
+            
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-900', 'text-white');
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            event.target.classList.remove('bg-slate-100', 'text-slate-600');
+            event.target.classList.add('bg-slate-900', 'text-white');
+
+            renderProducts();
+        }
+
+        function searchProducts() {
+            renderProducts();
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            const query = document.getElementById('search-input').value.toLowerCase();
+
+            const filtered = productsData.filter(p => {
+                const matchCat = currentCategory === 'todos' || p.category === currentCategory;
+                const matchQuery = p.name.toLowerCase().includes(query);
+                return matchCat && matchQuery;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400">Nenhum produto encontrado para sua busca.</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(product => `
+                <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+                    <div>
+                        <div class="relative overflow-hidden bg-slate-100 h-44">
+                            <img src="${product.image}" alt="${product.name}" onerror="this.src='https://placehold.co/400x300/f1f5f9/64748b?text=Produto+Pet'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <span class="absolute top-3 left-3 bg-white/90 backdrop-blur-xs text-slate-800 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-xs">
+                                ${product.tag}
+                            </span>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-slate-900 text-sm line-clamp-2 leading-snug">${product.name}</h3>
+                        </div>
+                    </div>
+                    <div class="p-4 pt-0 flex items-center justify-between gap-2">
+                        <div>
+                            <span class="text-xs text-slate-400 block">À vista</span>
+                            <span class="text-lg font-extrabold text-slate-900">R$ ${product.price.toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        <button onclick="addToCart(${product.id})" class="bg-brand-500 hover:bg-brand-600 text-white p-2.5 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 text-xs font-bold">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Adicionar
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // --- LÓGICA DO CARRINHO ---
+        function toggleCart() {
+            const drawer = document.getElementById('cart-drawer');
+            drawer.classList.toggle('hidden');
+        }
+
+        function addToCart(productId) {
+            const product = productsData.find(p => p.id === productId);
+            const existing = cart.find(item => item.id === productId);
+
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+
+            updateCartUI();
+            showToast("Adicionado ao Carrinho", `${product.name} foi incluído.`);
+        }
+
+        function changeQty(productId, delta) {
+            const item = cart.find(i => i.id === productId);
+            if (!item) return;
+
+            item.qty += delta;
+            if (item.qty <= 0) {
+                cart = cart.filter(i => i.id !== productId);
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const countBadge = document.getElementById('cart-count');
+            const itemsContainer = document.getElementById('cart-items');
+            const totalEl = document.getElementById('cart-total');
+
+            const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+            countBadge.textContent = totalQty;
+            totalEl.textContent = `R$ ${totalPrice.toFixed(2).replace('.', ',')}`;
+
+            if (cart.length === 0) {
+                itemsContainer.innerHTML = `
+                    <div class="text-center py-12 space-y-3">
+                        <div class="bg-slate-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto text-slate-400">
+                            <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm font-medium text-slate-500">Seu carrinho está vazio.</p>
+                    </div>
+                `;
+            } else {
+                itemsContainer.innerHTML = cart.map(item => `
+                    <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <img src="${item.image}" class="w-16 h-16 rounded-lg object-cover bg-white">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-bold text-slate-900 truncate">${item.name}</p>
+                            <p class="text-sm font-extrabold text-brand-600 mt-0.5">R$ ${(item.price * item.qty).toFixed(2).replace('.', ',')}</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-2 py-1">
+                            <button onclick="changeQty(${item.id}, -1)" class="text-slate-500 hover:text-slate-900 font-bold text-sm">-</button>
+                            <span class="text-xs font-bold w-4 text-center">${item.qty}</span>
+                            <button onclick="changeQty(${item.id}, 1)" class="text-slate-500 hover:text-slate-900 font-bold text-sm">+</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function checkoutCart() {
+            if (cart.length === 0) {
+                showToast("Carrinho Vazio", "Adicione produtos antes de finalizar.", "warning");
+                return;
+            }
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            cart = [];
+            updateCartUI();
+            toggleCart();
+            addLoyaltyPoints(100);
+
+            addNotification(
+                "racao",
+                "Pedido Confirmado & +100 Patas 🎁",
+                `Seu pedido de R$ ${total.toFixed(2).replace('.', ',')} saiu para entrega! Você ganhou +100 Patas e ativamos o aviso de reposição.`
+            );
+
+            showToast("Pedido Realizado!", "Você ganhou +100 Patas de fidelidade!");
+        }
+
+        // --- CLUBE DE FIDELIDADE (PATASCLUB) ---
+        function addLoyaltyPoints(pts) {
+            loyaltyPoints += pts;
+            updateLoyaltyUI();
+            saveCloudState();
+        }
+
+        function updateLoyaltyUI() {
+            const headerEl = document.getElementById('header-points');
+            const modalEl = document.getElementById('modal-points');
+            const barEl = document.getElementById('loyalty-progress-bar');
+            const statusEl = document.getElementById('loyalty-status-text');
+
+            if (headerEl) headerEl.textContent = loyaltyPoints;
+            if (modalEl) modalEl.textContent = loyaltyPoints;
+
+            const pct = Math.min(100, Math.round((loyaltyPoints / 500) * 100));
+            if (barEl) barEl.style.width = `${pct}%`;
+
+            if (statusEl) {
+                statusEl.textContent = loyaltyPoints >= 500
+                    ? "Parabéns! Você já pode resgatar 1 Banho Completo Grátis!"
+                    : `Faltam ${500 - loyaltyPoints} Patas para resgatar 1 Banho Grátis!`;
+            }
+        }
+
+        function openLoyaltyModal() {
+            updateLoyaltyUI();
+            document.getElementById('loyalty-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeLoyaltyModal() {
+            document.getElementById('loyalty-modal').classList.add('hidden');
+        }
+
+        function redeemReward(cost, rewardName) {
+            if (loyaltyPoints < cost) {
+                showToast("Saldo Insuficiente", `Você precisa de ${cost} Patas para este resgate.`, "warning");
+                return;
+            }
+            loyaltyPoints -= cost;
+            updateLoyaltyUI();
+            saveCloudState();
+            closeLoyaltyModal();
+            addNotification("banho", `Cupom Resgatado: ${rewardName} 🎉`, `Você trocou ${cost} Patas por "${rewardName}". Apresente este aviso na loja!`);
+            showToast("Recompensa Resgatada!", `"${rewardName}" enviada para seus avisos.`);
+        }
+
+        // --- LÓGICA DE AVISOS AUTOMÁTICOS ---
+        function addNotification(type, title, message) {
+            notifications.unshift({
+                id: Date.now(),
+                type,
+                title,
+                message,
+                time: "Agora mesmo",
+                unread: true
+            });
+            renderNotifications();
+            renderAdminPanel();
+            saveCloudState();
+        }
+
+        function toggleAutomationRule(ruleName) {
+            showToast("Automação Atualizada", `Configuração de "${ruleName}" salva com sucesso.`);
+        }
+
+        function simulateAutoAlert() {
+            const samples = [
+                {
+                    type: "banho",
+                    title: "Lembrete Quinzenal de Banho 🛁",
+                    message: "Já faz 15 dias desde o último banho do Thor! Que tal garantir o horário deste sábado?"
+                },
+                {
+                    type: "vacina",
+                    title: "Alerta de Vermífugo Mensal 💊",
+                    message: "Hoje é dia de administrar a dose mensal do vermífugo da Luna."
+                },
+                {
+                    type: "racao",
+                    title: "Ração Acabando? 🥣",
+                    message: "Estimamos que o pacote de ração esteja no fim. Peça agora com entrega expressa!"
+                }
+            ];
+            const random = samples[Math.floor(Math.random() * samples.length)];
+            addNotification(random.type, random.title, random.message);
+            showToast(random.title, random.message);
+        }
+
+        function markAllRead() {
+            notifications.forEach(n => n.unread = false);
+            renderNotifications();
+            saveCloudState();
+            showToast("Tudo Lido", "Todas as notificações foram marcadas como lidas.");
+        }
+
+        function renderNotifications() {
+            const feed = document.getElementById('notifications-feed');
+            const unreadCount = notifications.filter(n => n.unread).length;
+
+            // Atualiza badges
+            const badgeDesktop = document.getElementById('badge-avisos-desktop');
+            const badgeMobile = document.getElementById('badge-avisos-mobile');
+            
+            if (unreadCount > 0) {
+                badgeDesktop.textContent = unreadCount;
+                badgeMobile.textContent = unreadCount;
+                badgeDesktop.classList.remove('hidden');
+                badgeMobile.classList.remove('hidden');
+            } else {
+                badgeDesktop.classList.add('hidden');
+                badgeMobile.classList.add('hidden');
+            }
+
+            feed.innerHTML = notifications.map(n => {
+                let icon = "bell";
+                let iconBg = "bg-brand-100 text-brand-600";
+
+                if (n.type === "banho") { icon = "droplets"; iconBg = "bg-teal-100 text-teal-600"; }
+                if (n.type === "vacina") { icon = "syringe"; iconBg = "bg-rose-100 text-rose-600"; }
+
+                return `
+                <div class="p-4 rounded-xl border ${n.unread ? 'bg-brand-50/40 border-brand-200' : 'bg-white border-slate-200'} flex items-start gap-3.5 transition-all">
+                    <div class="${iconBg} p-2.5 rounded-xl shrink-0 mt-0.5">
+                        <i data-lucide="${icon}" class="w-5 h-5"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between gap-2">
+                            <h4 class="font-bold text-sm text-slate-900">${n.title}</h4>
+                            <span class="text-[11px] font-medium text-slate-400 shrink-0">${n.time}</span>
+                        </div>
+                        <p class="text-xs text-slate-600 mt-1 leading-relaxed">${n.message}</p>
+                    </div>
+                    ${n.unread ? `<span class="w-2.5 h-2.5 rounded-full bg-brand-500 shrink-0 mt-1.5"></span>` : ''}
+                </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // --- LÓGICA DA CARTEIRINHA DE PETS ---
+        function toggleNewPetForm() {
+            document.getElementById('new-pet-form').classList.toggle('hidden');
+        }
+
+        function handleAddPet(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-pet-name').value.trim();
+            const breed = document.getElementById('new-pet-breed').value.trim();
+            const species = document.getElementById('new-pet-species').value;
+
+            myPets.push({
+                id: Date.now(),
+                name,
+                species,
+                breed,
+                weight: "Aferir no banho",
+                vaccineStatus: "Carteirinha criada",
+                nextDewormer: "Programado (30d)"
+            });
+
+            renderPets();
+            saveCloudState();
+            toggleNewPetForm();
+            document.getElementById('new-pet-form').reset();
+            
+            addNotification("vacina", `Novo Pet Cadastrado: ${name} 🐾`, `Ativamos o monitoramento automático de vacinas e vermífugos para ${name}.`);
+            showToast("Pet Cadastrado!", `${name} agora possui carteirinha digital.`);
+        }
+
+        function quickBookPet(petName) {
+            switchTab('agendamento');
+            document.getElementById('pet-name').value = petName;
+            showToast("Agendamento Rápido", `Dados de ${petName} preenchidos!`);
+        }
+
+        function renderPets() {
+            const container = document.getElementById('pets-cards-list');
+            container.innerHTML = myPets.map(pet => `
+                <div class="p-4 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 rounded-xl ${pet.species === 'Cão' ? 'bg-amber-100 text-amber-700' : 'bg-teal-100 text-teal-700'} flex items-center justify-center font-extrabold text-lg">
+                                ${pet.species === 'Cão' ? '🐶' : '🐱'}
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-slate-900 text-base">${pet.name}</h3>
+                                <p class="text-xs text-slate-500">${pet.breed} • ${pet.weight}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-500">Vacinas:</span>
+                            <span class="font-semibold ${pet.vaccineStatus.includes('Vence') ? 'text-rose-600' : 'text-emerald-600'}">${pet.vaccineStatus}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-500">Vermífugo:</span>
+                            <span class="font-semibold text-slate-700">${pet.nextDewormer}</span>
+                        </div>
+                    </div>
+                    <button onclick="quickBookPet('${pet.name}')" class="w-full py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-xs rounded-xl transition-colors">
+                        Agendar Banho para ${pet.name}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // --- ASSISTENTE PET IA (GEMINI API) ---
+        function sendQuickPrompt(text) {
+            document.getElementById('ai-prompt-input').value = text;
+            handleAskAI(new Event('submit'));
+        }
+
+        async function handleAskAI(e) {
+            e.preventDefault();
+            const input = document.getElementById('ai-prompt-input');
+            const btn = document.getElementById('ai-send-btn');
+            const chatBox = document.getElementById('ai-chat-messages');
+            const userText = input.value.trim();
+            if (!userText) return;
+
+            // Adiciona mensagem do usuário
+            chatBox.innerHTML += `
+                <div class="flex justify-end">
+                    <div class="bg-slate-900 text-white rounded-2xl rounded-tr-none p-3 text-xs max-w-[85%] shadow-xs">
+                        ${userText}
+                    </div>
+                </div>
+            `;
+            input.value = '';
+            input.disabled = true;
+            btn.disabled = true;
+
+            // Indicador de carregamento
+            const loadingId = 'ai-loading-' + Date.now();
+            chatBox.innerHTML += `
+                <div id="${loadingId}" class="flex items-start gap-2.5">
+                    <div class="bg-teal-100 text-teal-700 p-1.5 rounded-lg shrink-0">
+                        <i data-lucide="bot" class="w-4 h-4"></i>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-none p-3 text-xs text-slate-400 italic">
+                        Consultando especialista PetCare...
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                const payload = {
+                    contents: [{ parts: [{ text: userText }] }],
+                    systemInstruction: {
+                        parts: [{ text: "Você é o assistente virtual especialista do petshop PetCare Pro. Responda em português do Brasil de forma acolhedora, prática, concisa (máximo 3 parágrafos curtos) e sempre recomende consultar um veterinário presencial em casos clínicos." }]
+                    }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, não consegui processar sua dúvida agora. Tente novamente em instantes!";
+
+                document.getElementById(loadingId)?.remove();
+                chatBox.innerHTML += `
+                    <div class="flex items-start gap-2.5">
+                        <div class="bg-teal-100 text-teal-700 p-1.5 rounded-lg shrink-0 mt-0.5">
+                            <i data-lucide="bot" class="w-4 h-4"></i>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-none p-3 text-xs text-slate-700 shadow-xs leading-relaxed whitespace-pre-line">
+                            ${reply}
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                document.getElementById(loadingId)?.remove();
+                chatBox.innerHTML += `
+                    <div class="text-xs text-rose-500 text-center py-2">Erro de conexão com o assistente. Tente novamente.</div>
+                `;
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                input.focus();
+                lucide.createIcons();
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        // --- MODO GESTÃO (LOJA) ---
+        function toggleRoleMode() {
+            isAdminMode = !isAdminMode;
+            const btnText = document.getElementById('role-toggle-text');
+            const btn = document.getElementById('role-toggle-btn');
+
+            if (isAdminMode) {
+                btnText.textContent = "Modo Cliente";
+                btn.classList.add('bg-teal-600', 'text-white', 'border-teal-600');
+                btn.classList.remove('bg-slate-50', 'text-slate-700', 'border-slate-200');
+                renderAdminPanel();
+                switchTab('gestao');
+                showToast("Painel Administrativo", "Você está visualizando o painel de gestão da loja.");
+            } else {
+                btnText.textContent = "Modo Loja";
+                btn.classList.remove('bg-teal-600', 'text-white', 'border-teal-600');
+                btn.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
+                switchTab('agendamento');
+            }
+        }
+
+        function handleAdminAddProduct(e) {
+            e.preventDefault();
+            const name = document.getElementById('admin-prod-name').value.trim();
+            const category = document.getElementById('admin-prod-cat').value;
+            const price = parseFloat(document.getElementById('admin-prod-price').value);
+            const tag = document.getElementById('admin-prod-tag').value.trim() || "Novidade";
+
+            productsData.unshift({
+                id: Date.now(),
+                name,
+                category,
+                price,
+                tag,
+                image: `https://placehold.co/400x300/fff7ed/ea580c?text=${encodeURIComponent(name.slice(0, 18))}`
+            });
+
+            renderProducts();
+            saveCloudState();
+            e.target.reset();
+            showToast("Produto Publicado!", `"${name}" já está disponível no catálogo.`);
+        }
+
+        function handleSaveStoreSettings(e) {
+            e.preventDefault();
+            storeSettings = {
+                name: document.getElementById('setting-store-name').value.trim(),
+                phone: document.getElementById('setting-store-phone').value.replace(/\D/g, ''),
+                address: document.getElementById('setting-store-address').value.trim()
+            };
+            applyStoreSettingsUI();
+            saveCloudState();
+            showToast("Identidade Atualizada!", "Nome, WhatsApp e endereço salvos com sucesso.");
+        }
+
+        function applyStoreSettingsUI() {
+            const brandEl = document.getElementById('store-brand-name');
+            const footerNameEl = document.getElementById('footer-store-name');
+            const footerAddrEl = document.getElementById('footer-store-address');
+            const waLinkEl = document.getElementById('footer-whatsapp-link');
+
+            const inputName = document.getElementById('setting-store-name');
+            const inputPhone = document.getElementById('setting-store-phone');
+            const inputAddr = document.getElementById('setting-store-address');
+
+            if (brandEl) brandEl.textContent = storeSettings.name;
+            if (footerNameEl) footerNameEl.textContent = storeSettings.name;
+            if (footerAddrEl) footerAddrEl.textContent = storeSettings.address;
+            if (waLinkEl) {
+                const msg = encodeURIComponent(`Olá! Vim pelo aplicativo ${storeSettings.name}.`);
+                waLinkEl.href = `https://wa.me/${storeSettings.phone}?text=${msg}`;
+            }
+
+            if (inputName) inputName.value = storeSettings.name;
+            if (inputPhone) inputPhone.value = storeSettings.phone;
+            if (inputAddr) inputAddr.value = storeSettings.address;
+            document.title = `${storeSettings.name} - Petshop, Banho & Tosa`;
+        }
+
+        function renderAdminPanel() {
+            const revEl = document.getElementById('kpi-revenue');
+            const activeEl = document.getElementById('kpi-active-pets');
+            const alertsEl = document.getElementById('kpi-alerts');
+            const queueList = document.getElementById('admin-queue-list');
+
+            if (!revEl || !queueList) return;
+
+            const totalRevenue = appointments.reduce((sum, a) => sum + a.price, 0);
+            revEl.textContent = `R$ ${totalRevenue.toFixed(2).replace('.', ',')}`;
+            activeEl.textContent = `${appointments.length} Pets`;
+            alertsEl.textContent = `${notifications.length} Envios`;
+
+            queueList.innerHTML = appointments.map(app => `
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50">
+                    <div>
+                        <p class="font-bold text-sm text-slate-900">${app.petName} <span class="text-xs font-normal text-slate-500">(${app.petSize})</span></p>
+                        <p class="text-xs text-slate-600">${app.service} • ${app.date} às ${app.time}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-700">${app.status}</span>
+                        ${app.statusStep < 3 ? `
+                            <button onclick="advanceStatus(${app.id})" class="px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-lg transition-colors">
+                                Avançar
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
